@@ -5,8 +5,6 @@ raven_aiohttp
 :copyright: (c) 2010-2015 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
-from __future__ import absolute_import
-
 from raven.exceptions import APIError, RateLimited
 from raven.transport.base import AsyncTransport
 from raven.transport.http import HTTPTransport
@@ -21,9 +19,6 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
     def __init__(self, parsed_url, *, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
                  keepalive=True, family=socket.AF_INET, loop=None):
-        if not has_aiohttp:
-            raise ImportError('AioHttpTransport requires asyncio and aiohttp.')
-
         if loop is None:
             loop = asyncio.get_event_loop()
         self._loop = loop
