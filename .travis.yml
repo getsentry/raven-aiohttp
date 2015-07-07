@@ -15,5 +15,5 @@ python:
 install:
   - time make
 script:
-  - make lint
-  - py.test --cov raven_aiohttp --cov-report term-missing
+  - time make lint-python
+  - time make test-python
