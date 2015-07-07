@@ -3,7 +3,7 @@ develop:
 	pip install -e .
 	pip install "file://`pwd`#egg=raven-aiohttp[test]"
 
-test: develop lint-python test-python validate-heroku
+test: develop lint-python test-python
 
 test-python:
 	@echo "--> Running Python tests"
