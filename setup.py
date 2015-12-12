@@ -36,7 +36,7 @@ tests_require = [
 
 
 install_requires = [
-    'aiohttp',
+    'aiohttp>=0.19',
     'raven>=5.4.0',
 ]
 
