@@ -6,7 +6,7 @@ A transport for [raven-python](https://github.com/getsentry/raven-python) which 
 
 - `raven-python>=5.4.0`
 - `python>=3.3`
-- `aiohttp`
+- `aiohttp>=0.19`
 
 ## Usage
 
