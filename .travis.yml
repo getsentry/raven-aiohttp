@@ -9,8 +9,8 @@ env:
   global:
     - PIP_DOWNLOAD_CACHE=".pip_download_cache"
 python:
-  - "3.3"
   - "3.4"
+  - "3.5"
 install:
   - time make
 script:
