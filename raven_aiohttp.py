@@ -39,7 +39,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             try:
                 resp = yield from asyncio.wait_for(
                     aiohttp.request('POST',
-                                    self._url, data=data,
+                                    self._url, data=data, compress=False,
                                     headers=headers,
                                     connector=self._connector,
                                     loop=self._loop),
