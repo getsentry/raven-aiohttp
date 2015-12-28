@@ -3,8 +3,7 @@ sudo: false
 cache:
   directories:
     - node_modules
-    - .pip_download_cache
-    - "$HOME/virtualenv/python2.7.9"
+    - ".pip_download_cache"
 env:
   global:
     - PIP_DOWNLOAD_CACHE=".pip_download_cache"
@@ -15,3 +14,11 @@ install:
 script:
   - time make lint-python
   - time make test-python
+deploy:
+  provider: pypi
+  user: getsentry
+  password:
+    secure: uAxU+kPyhFEGQHPbvLb3dt+8bVV/aUpCQjrmgtzuOyHiOLoHzX0oRgpfFLh+GUiXFx8SmX14EoSTgIbFKeab09p6Innu98oE4yzZTs6C+kExFO6+kIhPyMIhghxsOui9i6cst5EVEK6lgINY9phBOYsSwMaspvdOGB5s3KkPK+tq4c6jWZerlULhUypdeBy4MiS00gBSfVppz5TNgX29kawM5ff4KQR6koR6UFck0uA77lssyvggiAR66kgNsM5XtpkJUTW5hjJe/LDzYz0jx5vUNW7GaJWqjyihIiOcBeKmbSQWHdkFEJT9g2VPykQhsdhuO1Q/VDKZ0KEPb3V/A7eGJTxSk8bOUI+tmZEzd+gNAVstjh+m05i5OppHFYQNIaYJk5U+WJlvnzuR1RYy0cf0lXBA+dMDTaLMd4P+qpCb8k1nnNkTnUKiNF9VqzjtvbEANYOZ0BtmXSBTl/dHpdyruC/UBUv+Ynm8ScYH2muJr1MEXX1JQx6eHwzRSqTrR16Q7l1XJ7n+qHM9mo/qTvKv9N5cdz5orMI6ET/3SsgvBmQbP1xVWoy3B4CeaH7wCvj4z1vHA4JONdXaT2EUWPj+pNKj05bgAzpUP5ywWSdorxI3H7RNKlMEs1qoTUPQyDivQ7A3C5/nRPd9WoJjCIbEFIcO+YZ2rMGBo6vOk8g=
+  on:
+    tags: true
+    repo: getsentry/raven-aiohttp
