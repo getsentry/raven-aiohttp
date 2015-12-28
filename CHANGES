@@ -1,0 +1,6 @@
+0.2.0
+-----
+
+Requires aiohttp >= 0.19
+
+- Disable compression in aiohttp (handled by Raven automatically).
