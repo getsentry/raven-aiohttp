@@ -14,7 +14,7 @@ After installing the package, configure the client with the transport:
 
 ```
 from raven import Client
-from raven_aiohttp impot AioHttpTransport
+from raven_aiohttp import AioHttpTransport
 
 client = Client(transport=AioHttpTransport)
 ```
