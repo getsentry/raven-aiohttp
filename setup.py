@@ -42,7 +42,7 @@ install_requires = [
 
 setup(
     name='raven-aiohttp',
-    version='0.3.0.dev0',
+    version='0.3.0',
     author='David Cramer',
     author_email='dcramer@gmail.com',
     url='https://github.com/getsentry/raven-aiohttp',
