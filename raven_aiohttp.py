@@ -16,10 +16,7 @@ import socket
 from functools import partial
 
 
-def create_task(*, loop=None):
-    if loop is None:
-        loop = asyncio.get_event_loop()
-
+def create_task(*, loop):
     try:
         return loop.create_task
     except AttributeError:
@@ -42,6 +39,8 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
         super().__init__(parsed_url, timeout, verify_ssl)
         self._client_session = None
+
+        self.create_task = create_task(self._loop)
 
     @property
     def resolve(self):
@@ -98,4 +97,4 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                 if not self.keepalive:
                     yield from session.close()
 
-        create_task(loop=self._loop)(f())
+        self.create_task(f())
