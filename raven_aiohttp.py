@@ -13,11 +13,17 @@ from raven.conf import defaults
 import aiohttp
 import asyncio
 import socket
+from functools import partial
 
-try:
-    from asyncio import ensure_future
-except ImportError:
-    ensure_future = asyncio.async
+
+def create_task(*, loop):
+    try:
+        return loop.create_task
+    except AttributeError:
+        try:
+            return partial(asyncio.ensure_future, loop=loop)
+        except AttributeError:
+            return partial(getattr(asyncio, 'async'), loop=loop)
 
 
 class AioHttpTransport(AsyncTransport, HTTPTransport):
@@ -33,6 +39,8 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
         super().__init__(parsed_url, timeout, verify_ssl)
         self._client_session = None
+
+        self.create_task = create_task(self._loop)
 
     @property
     def resolve(self):
@@ -89,4 +97,4 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                 if not self.keepalive:
                     yield from session.close()
 
-        ensure_future(f(), loop=self._loop)
+        self.create_task(f())
