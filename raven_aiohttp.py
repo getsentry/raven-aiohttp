@@ -20,7 +20,7 @@ except ImportError:
     ensure_future = asyncio.async
 
 
-class AioHttpTransport(AsyncTransport, HTTPTransport):
+class AIOHTTPTransport(AsyncTransport, HTTPTransport):
     def __init__(self, parsed_url, *, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
                  keepalive=True, family=socket.AF_INET, loop=None):
