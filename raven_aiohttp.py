@@ -5,6 +5,7 @@ raven_aiohttp
 :copyright: (c) 2010-2015 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
+from raven import VERSION
 from raven.exceptions import APIError, RateLimited
 from raven.transport.base import AsyncTransport
 from raven.transport.http import HTTPTransport
@@ -20,8 +21,11 @@ except ImportError:
     ensure_future = asyncio.async
 
 
+has_new_transports = int(VERSION.split('.')[0]) > 5
+
+
 class AioHttpTransport(AsyncTransport, HTTPTransport):
-    def __init__(self, parsed_url, *, verify_ssl=True, resolve=True,
+    def __init__(self, *args, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
                  keepalive=True, family=socket.AF_INET, loop=None):
         self._resolve = resolve
@@ -31,7 +35,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             loop = asyncio.get_event_loop()
         self._loop = loop
 
-        super().__init__(parsed_url, timeout, verify_ssl)
+        super().__init__(*args, timeout, verify_ssl)
         self._client_session = None
 
     @property
@@ -57,13 +61,13 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                                                          loop=self._loop)
         return self._client_session
 
-    def async_send(self, data, headers, success_cb, failure_cb):
+    def async_send(self, url, data, headers, success_cb, failure_cb):
         @asyncio.coroutine
         def f():
             session = self.client_session()
             try:
                 resp = yield from asyncio.wait_for(
-                    session.post(self._url,
+                    session.post(url,
                                  data=data,
                                  compress=False,
                                  headers=headers),
@@ -90,3 +94,9 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                     yield from session.close()
 
         ensure_future(f(), loop=self._loop)
+
+    if not has_new_transports:
+        _async_send = async_send
+
+        def async_send(self, data, headers, success_cb, failure_cb):
+            return self._async_send(self._url, data, headers, success_cb, failure_cb)
