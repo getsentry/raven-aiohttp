@@ -103,7 +103,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
         ensure_future(f(), loop=self._loop)
 
-    if has_newstyle_transports:
+    if not has_newstyle_transports:
         _async_send = async_send
 
         def async_send(self, *args, **kwargs):
