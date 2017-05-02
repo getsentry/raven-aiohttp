@@ -10,11 +10,12 @@ A transport for [raven-python](https://github.com/getsentry/raven-python) which 
 
 ## Usage
 
-After installing the package, configure the client with the transport:
-
+See `example.py` for an example that you can run like this:
+```bash
+$ python3 example.py
 ```
-from raven import Client
-from raven_aiohttp import AioHttpTransport
 
-client = Client(transport=AioHttpTransport)
+For testing, you can set your DSN like this:
+```bash
+$ SENTRY_DSN=https://public:secret@example.com/1 python3 example.py
 ```
