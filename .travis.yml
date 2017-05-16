@@ -1,12 +1,6 @@
 language: python
 sudo: false
-cache:
-  directories:
-    - node_modules
-    - ".pip_download_cache"
-env:
-  global:
-    - PIP_DOWNLOAD_CACHE=".pip_download_cache"
+cache: pip
 python:
   - "3.4"
   - "3.5"
