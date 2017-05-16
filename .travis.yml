@@ -10,7 +10,7 @@ install:
 script:
   - time make lint-python
   - time make test-python
-  - time make test-setup
+  -  if [[ "$TRAVIS_PYTHON_VERSION" != "3.4" ]]; then time make test-setup; fi
 deploy:
   provider: pypi
   user: getsentry
