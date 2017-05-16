@@ -9,11 +9,14 @@ env:
     - PIP_DOWNLOAD_CACHE=".pip_download_cache"
 python:
   - "3.4"
+  - "3.5"
+  - "3.6"
 install:
   - time make
 script:
   - time make lint-python
   - time make test-python
+  - time make test-setup
 deploy:
   provider: pypi
   user: getsentry

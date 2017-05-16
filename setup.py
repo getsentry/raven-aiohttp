@@ -47,7 +47,7 @@ setup(
     author_email='dcramer@gmail.com',
     url='https://github.com/getsentry/raven-aiohttp',
     description='An asyncio transport for raven-python',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     py_modules=['raven_aiohttp'],
     zip_safe=False,
     install_requires=install_requires,
