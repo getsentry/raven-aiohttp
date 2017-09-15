@@ -134,7 +134,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
         resp = None
         try:
             with async_timeout.timeout(self.timeout, loop=self._loop):
-                # timeout=None disables built-int aiohttp timeout
+                # timeout=None disables built-in aiohttp timeout
                 resp = yield from session.post(url, data=data, compress=False,
                                                headers=headers, timeout=None)
 
