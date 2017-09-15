@@ -176,7 +176,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             self._queue_put(data)
         else:
             coro = self._do_send(url, data, headers, success_cb, failure_cb)
-            ensure_future(coro)
+            ensure_future(coro, loop=self._loop)
 
     if not has_newstyle_transports:
         _async_send = async_send
