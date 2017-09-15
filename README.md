@@ -13,8 +13,20 @@ A transport for [raven-python](https://github.com/getsentry/raven-python) which 
 After installing the package, configure the client with the transport:
 
 ```
+import asyncio
+
 from raven import Client
 from raven_aiohttp import AioHttpTransport
 
 client = Client(transport=AioHttpTransport)
+
+try:
+    1 / 0
+except ZeroDivisionError:
+    client.captureException()
+
+# There is built-in graceful shutdown
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(client.remote.get_transport().close(timeout=2))
 ```
