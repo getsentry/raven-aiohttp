@@ -61,7 +61,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
         if self._background_workers:
             self._queue = asyncio.Queue(maxsize=self._queue_maxsize)
             self._workers = set()
-            for _ in range(background_workers):
+            for _ in range(self._background_workers):
                 worker = ensure_future(self._worker(), loop=self._loop)
                 self._workers.add(worker)
                 worker.add_done_callback(self._workers.remove)
@@ -173,7 +173,6 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
         if self._background_workers:
             data = url, data, headers, success_cb, failure_cb
-
             self._queue_put(data)
         else:
             coro = self._do_send(url, data, headers, success_cb, failure_cb)
