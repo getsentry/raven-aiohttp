@@ -37,6 +37,7 @@ tests_require = [
 
 install_requires = [
     'aiohttp>=2.2',
+    'async_timeout'
     'raven>=5.4.0',
 ]
 
