@@ -35,12 +35,14 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
     def __init__(self, parsed_url=None, *, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
                  keepalive=True, family=socket.AF_INET,
-                 background_workers=1, queue_maxsize=0, loop=None):
+                 background_workers=0, queue_maxsize=0, loop=None):
         self._resolve = resolve
         self._keepalive = keepalive
         self._family = family
         if loop is None:
             loop = asyncio.get_event_loop()
+        self._background_workers = background_workers
+        self._queue_maxsize = queue_maxsize
         self._loop = loop
 
         if has_newstyle_transports:
@@ -55,12 +57,14 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             self._client_session = self._client_session_factory()
 
         self._closing = False
-        self._queue = asyncio.Queue(queue_maxsize)
-        self._workers = set()
-        for _ in range(background_workers):
-            worker = ensure_future(self._worker(), loop=self._loop)
-            self._workers.add(worker)
-            worker.add_done_callback(self._workers.remove)
+
+        if self._background_workers:
+            self._queue = asyncio.Queue(maxsize=self._queue_maxsize)
+            self._workers = set()
+            for _ in range(background_workers):
+                worker = ensure_future(self._worker(), loop=self._loop)
+                self._workers.add(worker)
+                worker.add_done_callback(self._workers.remove)
 
     @property
     def resolve(self):
@@ -97,14 +101,15 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
     def close(self, timeout=None):
         self._closing = True
 
-        self._queue_put(...)
-
         try:
-            with async_timeout.timeout(timeout, loop=self._loop):
-                yield from asyncio.gather(*self._workers, loop=self._loop)
+            if self._background_workers:
+                self._queue_put(...)
 
-            assert len(self._workers) == 0
-            assert self._queue.get_nowait() is ...
+                with async_timeout.timeout(timeout, loop=self._loop):
+                    yield from asyncio.gather(*self._workers, loop=self._loop)
+
+                assert len(self._workers) == 0
+                assert self._queue.get_nowait() is ...
         finally:
             if self.keepalive:
                 yield from self._client_session.close()
@@ -120,11 +125,11 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
             url, data, headers, success_cb, failure_cb = data
 
-            yield from self.__async_send(url, data, headers, success_cb,
-                                         failure_cb)
+            yield from self._do_send(url, data, headers, success_cb,
+                                     failure_cb)
 
     @asyncio.coroutine
-    def __async_send(self, url, data, headers, success_cb, failure_cb):
+    def _do_send(self, url, data, headers, success_cb, failure_cb):
         if self.keepalive:
             session = self._client_session
         else:
@@ -166,9 +171,13 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
         if self._closing:
             raise RuntimeError('AioHttpTransport is closing')
 
-        data = url, data, headers, success_cb, failure_cb
+        if self._background_workers:
+            data = url, data, headers, success_cb, failure_cb
 
-        self._queue_put(data)
+            self._queue_put(data)
+        else:
+            coro = self._do_send(url, data, headers, success_cb, failure_cb)
+            ensure_future(coro)
 
     if not has_newstyle_transports:
         _async_send = async_send
