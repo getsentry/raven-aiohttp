@@ -105,7 +105,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                 yield from asyncio.gather(*self._workers, loop=self._loop)
 
             assert len(self._workers) == 0
-            assert self._queue.get_nowait() == ...
+            assert self._queue.get_nowait() is ...
         finally:
             if self.keepalive:
                 yield from self._client_session.close()
