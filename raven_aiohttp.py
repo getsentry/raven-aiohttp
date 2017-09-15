@@ -35,7 +35,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
     def __init__(self, parsed_url=None, *, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
                  keepalive=True, family=socket.AF_INET,
-                 background_workers=1, queue_limit=0, loop=None):
+                 background_workers=1, queue_maxsize=0, loop=None):
         self._resolve = resolve
         self._keepalive = keepalive
         self._family = family
@@ -55,7 +55,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             self._client_session = self._client_session_factory()
 
         self._closing = False
-        self._queue = asyncio.Queue(queue_limit)
+        self._queue = asyncio.Queue(queue_maxsize)
         self._workers = set()
         for _ in range(background_workers):
             worker = ensure_future(self._worker(), loop=self._loop)
