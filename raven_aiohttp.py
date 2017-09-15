@@ -31,12 +31,11 @@ logger = logging.getLogger('sentry.errors')
 
 
 class AioHttpTransport(AsyncTransport, HTTPTransport):
-    QUEUE_LIMIT = 1000
-    WORKERS = 10
 
     def __init__(self, parsed_url=None, *, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
-                 keepalive=True, family=socket.AF_INET, loop=None):
+                 keepalive=True, family=socket.AF_INET,
+                 workers=10, queue_limit=1000, loop=None):
         self._resolve = resolve
         self._keepalive = keepalive
         self._family = family
@@ -56,9 +55,9 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             self._client_session = self._client_session_factory()
 
         self._closing = False
-        self._queue = asyncio.Queue(self.QUEUE_LIMIT)
+        self._queue = asyncio.Queue(queue_limit)
         self._workers = set()
-        for _ in range(self.WORKERS):
+        for _ in range(workers):
             worker = ensure_future(self._worker(), loop=self._loop)
             self._workers.add(worker)
             worker.add_done_callback(self._workers.remove)
