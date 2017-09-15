@@ -17,7 +17,7 @@ import socket
 try:
     from asyncio import ensure_future
 except ImportError:
-    ensure_future = asyncio.async
+    ensure_future = getattr(asyncio, 'async')
 
 
 try:
