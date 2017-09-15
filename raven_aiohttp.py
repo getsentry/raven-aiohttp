@@ -131,6 +131,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
         else:
             session = self._client_session_factory()
 
+        resp = None
         try:
             with async_timeout.timeout(self.timeout, loop=self._loop):
                 # timeout=None disables built-int aiohttp timeout
@@ -157,6 +158,8 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
         except Exception as exc:
             failure_cb(exc)
         finally:
+            if resp is not None:
+                resp.release()
             if not self.keepalive:
                 yield from session.close()
 
