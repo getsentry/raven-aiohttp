@@ -87,7 +87,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                                      loop=self._loop)
 
     @asyncio.coroutine
-    def close(self, timeout=None, return_exceptions=True):
+    def close(self, *, timeout=None):
         self._closing = True
 
         try:
@@ -97,7 +97,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
                     yield from asyncio.gather(
                         *self._workers,
-                        return_exceptions=return_exceptions,
+                        return_exceptions=True,
                         loop=self._loop
                     )
 
@@ -105,7 +105,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                 else:
                     yield from asyncio.gather(
                         *self._tasks,
-                        return_exceptions=return_exceptions,
+                        return_exceptions=True,
                         loop=self._loop
                     )
 
