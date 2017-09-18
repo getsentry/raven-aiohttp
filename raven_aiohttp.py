@@ -88,22 +88,13 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
         return aiohttp.ClientSession(connector=connector,
                                      loop=self._loop)
 
-    def _queue_put(self, data):
-        try:
-            self._queue.put_nowait(data)
-        except asyncio.QueueFull as exc:
-            logger.error('AioHttpTransport._queue was throttled', exc_info=exc)
-            # throw last oldest message in queue and put new one
-            self._queue.get_nowait()
-            self._queue.put_nowait(data)
-
     @asyncio.coroutine
     def close(self, timeout=None):
         self._closing = True
 
         try:
             if self._background_workers:
-                self._queue_put(...)
+                yield from self._queue.put(...)
 
                 with async_timeout.timeout(timeout, loop=self._loop):
                     yield from asyncio.gather(*self._workers, loop=self._loop)
@@ -173,7 +164,14 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
         if self._background_workers:
             data = url, data, headers, success_cb, failure_cb
-            self._queue_put(data)
+
+            try:
+                self._queue.put_nowait(data)
+            except asyncio.QueueFull as exc:
+                *_, failure_cb = self._queue.get_nowait()
+                failure_cb(exc)
+
+                self._queue.put_nowait(data)
         else:
             coro = self._do_send(url, data, headers, success_cb, failure_cb)
             ensure_future(coro, loop=self._loop)
