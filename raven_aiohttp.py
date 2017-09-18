@@ -97,8 +97,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
         try:
             with async_timeout.timeout(timeout, loop=self._loop):
                 if self._background_workers:
-                    for worker in self._workers:
-                        worker.cancel()
+                    yield from self._queue.put(...)
 
                     yield from asyncio.gather(
                         *self._workers,
@@ -125,6 +124,10 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
     def _worker(self):
         while True:
             data = yield from self._queue.get()
+
+            if data is ...:
+                yield from self._queue.put_nowait(...)
+                break
 
             url, data, headers, success_cb, failure_cb = data
 
@@ -180,7 +183,16 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             try:
                 self._queue.put_nowait(data)
             except asyncio.QueueFull as exc:
-                *_, failure_cb = self._queue.get_nowait()
+                while True:
+                    skipped = self._queue.get_nowait()
+
+                    if skipped is ...:
+                        self._queue.put_nowait(...)
+
+                    break
+
+                *_, failure_cb = skipped
+
                 failure_cb(exc)
 
                 self._queue.put_nowait(data)
