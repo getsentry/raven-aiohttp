@@ -115,6 +115,8 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                     )
 
                     assert len(self._tasks) == 0
+        except asyncio.TimeoutError:
+            pass
         finally:
             if self.keepalive:
                 yield from self._client_session.close()
