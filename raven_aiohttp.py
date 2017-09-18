@@ -188,6 +188,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
                     if skipped is ...:
                         self._queue.put_nowait(...)
+                        continue
 
                     break
 
