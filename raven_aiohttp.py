@@ -65,6 +65,8 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                 worker = ensure_future(self._worker(), loop=self._loop)
                 self._workers.add(worker)
                 worker.add_done_callback(self._workers.remove)
+        else:
+            self._tasks = set()
 
     @property
     def resolve(self):
@@ -89,18 +91,30 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                                      loop=self._loop)
 
     @asyncio.coroutine
-    def close(self, timeout=None):
+    def close(self, timeout=None, return_exceptions=True):
         self._closing = True
 
         try:
-            if self._background_workers:
-                yield from self._queue.put(...)
+            with async_timeout.timeout(timeout, loop=self._loop):
+                if self._background_workers:
+                    for worker in self._workers:
+                        worker.cancel()
 
-                with async_timeout.timeout(timeout, loop=self._loop):
-                    yield from asyncio.gather(*self._workers, loop=self._loop)
+                    yield from asyncio.gather(
+                        *self._workers,
+                        return_exceptions=return_exceptions,
+                        loop=self._loop
+                    )
 
-                assert len(self._workers) == 0
-                assert self._queue.get_nowait() is ...
+                    assert len(self._workers) == 0
+                else:
+                    yield from asyncio.gather(
+                        *self._tasks,
+                        return_exceptions=return_exceptions,
+                        loop=self._loop
+                    )
+
+                    assert len(self._tasks) == 0
         finally:
             if self.keepalive:
                 yield from self._client_session.close()
@@ -109,10 +123,6 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
     def _worker(self):
         while True:
             data = yield from self._queue.get()
-
-            if data is ...:
-                self._queue_put(...)
-                break
 
             url, data, headers, success_cb, failure_cb = data
 
@@ -174,7 +184,10 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                 self._queue.put_nowait(data)
         else:
             coro = self._do_send(url, data, headers, success_cb, failure_cb)
-            ensure_future(coro, loop=self._loop)
+
+            task = ensure_future(coro, loop=self._loop)
+            self._tasks.add(task)
+            task.add_done_callback(self._tasks.remove)
 
     if not has_newstyle_transports:
         _async_send = async_send
