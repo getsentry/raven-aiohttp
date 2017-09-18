@@ -122,7 +122,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             data = yield from self._queue.get()
 
             if data is ...:
-                yield from self._queue.put_nowait(...)
+                self._queue.put_nowait(...)
                 break
 
             url, data, headers, success_cb, failure_cb = data
