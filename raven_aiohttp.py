@@ -13,7 +13,6 @@ from raven.conf import defaults
 import aiohttp
 import asyncio
 import socket
-import logging
 
 try:
     from asyncio import ensure_future
@@ -25,9 +24,6 @@ try:
     from raven.transport.base import has_newstyle_transports
 except ImportError:
     has_newstyle_transports = False
-
-
-logger = logging.getLogger('sentry.errors')
 
 
 class AioHttpTransport(AsyncTransport, HTTPTransport):
