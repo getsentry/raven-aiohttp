@@ -181,7 +181,8 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
     def async_send(self, url, data, headers, success_cb, failure_cb):
         if self._closing:
-            raise RuntimeError('AioHttpTransport is closing')
+            failure_cb(RuntimeError('AioHttpTransport is closing'))
+            return
 
         if self._background_workers:
             data = url, data, headers, success_cb, failure_cb
