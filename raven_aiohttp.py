@@ -104,6 +104,11 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                     )
 
                     assert len(self._workers) == 0
+                    assert self._queue.qsize() == 1
+                    try:
+                        assert self._queue.get_nowait() is ...
+                    finally:
+                        self._queue.task_done()
                 else:
                     yield from asyncio.gather(
                         *self._tasks,

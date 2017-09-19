@@ -52,7 +52,7 @@ def raven_client(event_loop):
 
     @asyncio.coroutine
     def do_close():
-        closes = [transport.close(timeout=0) for transport in transports]
+        closes = [transport.close() for transport in transports]
         yield from asyncio.gather(*closes, loop=event_loop)
 
     event_loop.run_until_complete(do_close())
