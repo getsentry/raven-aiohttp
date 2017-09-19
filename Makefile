@@ -7,10 +7,13 @@ test: develop lint-python test-python
 
 test-python:
 	@echo "--> Running Python tests"
-	py.test test_raven_aiohttp.py
+	python setup.py test
 	@echo ""
 
 lint-python:
 	@echo "--> Linting Python files"
-	PYFLAKES_NODOCTEST=1 flake8 *.py
+	flake8 --show-source setup.py raven_aiohttp.py
+	isort --check-only setup.py raven_aiohttp.py --diff
+	flake8 --show-source tests
+	isort --check-only -rc tests --diff
 	@echo ""

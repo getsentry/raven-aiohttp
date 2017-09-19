@@ -12,3 +12,5 @@ npm-debug.log
 /node_modules
 /dist
 .vagrant
+.cache
+.tox

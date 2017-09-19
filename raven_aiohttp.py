@@ -5,25 +5,27 @@ raven_aiohttp
 :copyright: (c) 2010-2015 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
+import asyncio
+import socket
+
+import aiohttp
+import async_timeout
+from raven.conf import defaults
 from raven.exceptions import APIError, RateLimited
 from raven.transport.base import AsyncTransport
 from raven.transport.http import HTTPTransport
-from raven.conf import defaults
-
-import aiohttp
-import asyncio
-import socket
 
 try:
     from asyncio import ensure_future
 except ImportError:
     ensure_future = getattr(asyncio, 'async')
 
-import async_timeout
 try:
     from raven.transport.base import has_newstyle_transports
 except ImportError:
     has_newstyle_transports = False
+
+__version__ = '0.6.0.dev0'
 
 
 class AioHttpTransport(AsyncTransport, HTTPTransport):
@@ -119,16 +121,19 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
     @asyncio.coroutine
     def _worker(self):
         while True:
-            data = yield from self._queue.get()
+            try:
+                data = yield from self._queue.get()
 
-            if data is ...:
-                self._queue.put_nowait(...)
-                break
+                if data is ...:
+                    self._queue.put_nowait(...)
+                    break
 
-            url, data, headers, success_cb, failure_cb = data
+                url, data, headers, success_cb, failure_cb = data
 
-            yield from self._do_send(url, data, headers, success_cb,
-                                     failure_cb)
+                yield from self._do_send(url, data, headers, success_cb,
+                                         failure_cb)
+            finally:
+                self._queue.task_done()
 
     @asyncio.coroutine
     def _do_send(self, url, data, headers, success_cb, failure_cb):
@@ -181,6 +186,7 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             except asyncio.QueueFull as exc:
                 while True:
                     skipped = self._queue.get_nowait()
+                    self._queue.task_done()
 
                     if skipped is ...:
                         self._queue.put_nowait(...)

@@ -1,16 +1,16 @@
 language: python
 sudo: false
-cache:
-  directories:
-    - node_modules
-    - ".pip_download_cache"
+cache: pip
 env:
-  global:
-    - PIP_DOWNLOAD_CACHE=".pip_download_cache"
+  matrix:
+    PYTHONASYNCIODEBUG=x
+    PYTHONASYNCIODEBUG=
 python:
+  - "3.6"
+  - "3.5"
   - "3.4"
 install:
-  - time make
+  - time make develop
 script:
   - time make lint-python
   - time make test-python
