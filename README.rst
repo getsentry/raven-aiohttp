@@ -40,7 +40,6 @@ Each new message spawns it owns `asyncio.Task`, amount of then is not limited
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(client.remote.get_transport().close())
-    ```
 
 
 QueuedAioHttpTransport
@@ -69,4 +68,3 @@ which sends messages one by one from internal `asyncio.Queue`.
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(client.remote.get_transport().close())
-    ```
