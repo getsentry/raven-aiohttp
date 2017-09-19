@@ -49,7 +49,7 @@ QueuedAioHttpTransport
 All messages to the sentry server will be produced by queue system
 
 When transport is created it spawns limited amount of `asyncio.Task`
-which sends messages one by one from internal `asyncio.Queue`.
+which sends messages one by one from internal `asyncio.Queue`
 
 .. code-block:: python
 
