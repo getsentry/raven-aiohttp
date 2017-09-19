@@ -2,7 +2,7 @@
 raven-aiohttp
 =============
 
-A transport for [raven-python](https://github.com/getsentry/raven-python) which supports Python 3's asyncio interface.
+A transport for `raven-python <https://github.com/getsentry/raven-python>`_ which supports Python 3's asyncio interface.
 
 Requirements
 ============
