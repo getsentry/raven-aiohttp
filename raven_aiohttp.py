@@ -132,7 +132,8 @@ class AioHttpTransportBase(
 
     def async_send(self, url, data, headers, success_cb, failure_cb):
         if self._closing:
-            failure_cb(RuntimeError('AioHttpTransport is closing'))
+            failure_cb(RuntimeError(
+                '{} is closed'.format(self.__class__.__name__)))
             return
 
         self._async_send(url, data, headers, success_cb, failure_cb)
@@ -231,8 +232,8 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
 
             *_, failure_cb = skipped
 
-            failure_cb(RuntimeError('AioHttpTransport background queue'
-                                    'is overloaded'))
+            failure_cb(RuntimeError(
+                'QueuedAioHttpTransport internal queue is full'))
 
             self._queue.put_nowait(data)
 
