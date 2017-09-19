@@ -5,6 +5,7 @@ raven_aiohttp
 :copyright: (c) 2010-2015 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
+import abc
 import asyncio
 import socket
 
@@ -28,19 +29,21 @@ except ImportError:
 __version__ = '0.6.0.dev0'
 
 
-class AioHttpTransport(AsyncTransport, HTTPTransport):
+class AioHttpTransportBase(
+    AsyncTransport,
+    HTTPTransport,
+    metaclass=abc.ABCMeta
+):
 
     def __init__(self, parsed_url=None, *, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
-                 keepalive=True, family=socket.AF_INET,
-                 background_workers=0, queue_maxsize=0, loop=None):
+                 keepalive=True, family=socket.AF_INET, loop=None):
         self._resolve = resolve
         self._keepalive = keepalive
         self._family = family
         if loop is None:
             loop = asyncio.get_event_loop()
-        self._background_workers = background_workers
-        self._queue_maxsize = queue_maxsize
+
         self._loop = loop
 
         if has_newstyle_transports:
@@ -55,16 +58,6 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             self._client_session = self._client_session_factory()
 
         self._closing = False
-
-        if self._background_workers:
-            self._queue = asyncio.Queue(maxsize=self._queue_maxsize)
-            self._workers = set()
-            for _ in range(self._background_workers):
-                worker = ensure_future(self._worker(), loop=self._loop)
-                self._workers.add(worker)
-                worker.add_done_callback(self._workers.remove)
-        else:
-            self._tasks = set()
 
     @property
     def resolve(self):
@@ -87,58 +80,6 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
                                          loop=self._loop)
         return aiohttp.ClientSession(connector=connector,
                                      loop=self._loop)
-
-    @asyncio.coroutine
-    def close(self, *, timeout=None):
-        self._closing = True
-
-        try:
-            with async_timeout.timeout(timeout, loop=self._loop):
-                if self._background_workers:
-                    yield from self._queue.put(...)
-
-                    yield from asyncio.gather(
-                        *self._workers,
-                        return_exceptions=True,
-                        loop=self._loop
-                    )
-
-                    assert len(self._workers) == 0
-                    assert self._queue.qsize() == 1
-                    try:
-                        assert self._queue.get_nowait() is ...
-                    finally:
-                        self._queue.task_done()
-                else:
-                    yield from asyncio.gather(
-                        *self._tasks,
-                        return_exceptions=True,
-                        loop=self._loop
-                    )
-
-                    assert len(self._tasks) == 0
-        except asyncio.TimeoutError:
-            pass
-        finally:
-            if self.keepalive:
-                yield from self._client_session.close()
-
-    @asyncio.coroutine
-    def _worker(self):
-        while True:
-            try:
-                data = yield from self._queue.get()
-
-                if data is ...:
-                    self._queue.put_nowait(...)
-                    break
-
-                url, data, headers, success_cb, failure_cb = data
-
-                yield from self._do_send(url, data, headers, success_cb,
-                                         failure_cb)
-            finally:
-                self._queue.task_done()
 
     @asyncio.coroutine
     def _do_send(self, url, data, headers, success_cb, failure_cb):
@@ -179,42 +120,135 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
             if not self.keepalive:
                 yield from session.close()
 
+    @abc.abstractmethod
+    @asyncio.coroutine
+    def _async_send(self, *, timeout=None):
+        pass
+
+    @abc.abstractmethod
+    @asyncio.coroutine
+    def _close(self, *, timeout=None):
+        pass
+
     def async_send(self, url, data, headers, success_cb, failure_cb):
         if self._closing:
             failure_cb(RuntimeError('AioHttpTransport is closing'))
             return
 
-        if self._background_workers:
-            data = url, data, headers, success_cb, failure_cb
+        self._async_send(url, data, headers, success_cb, failure_cb)
 
-            try:
-                self._queue.put_nowait(data)
-            except asyncio.QueueFull as exc:
-                while True:
-                    skipped = self._queue.get_nowait()
-                    self._queue.task_done()
+    @asyncio.coroutine
+    def close(self, timeout=None):
+        self._closing = True
 
-                    if skipped is ...:
-                        self._queue.put_nowait(...)
-                        continue
-
-                    break
-
-                *_, failure_cb = skipped
-
-                failure_cb(RuntimeError('AioHttpTransport background queue'
-                                        'is overloaded'))
-
-                self._queue.put_nowait(data)
-        else:
-            coro = self._do_send(url, data, headers, success_cb, failure_cb)
-
-            task = ensure_future(coro, loop=self._loop)
-            self._tasks.add(task)
-            task.add_done_callback(self._tasks.remove)
+        try:
+            with async_timeout.timeout(timeout, loop=self._loop):
+                yield from self._close()
+        except asyncio.TimeoutError:
+            pass
+        finally:
+            if self.keepalive:
+                yield from self._client_session.close()
 
     if not has_newstyle_transports:
-        _async_send = async_send
+        oldstyle_async_send = async_send
 
         def async_send(self, *args, **kwargs):
-            return self._async_send(self._url, *args, **kwargs)
+            return self.oldstyle_async_send(self._url, *args, **kwargs)
+
+
+class AioHttpTransport(AioHttpTransportBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._tasks = set()
+
+    def _async_send(self, url, data, headers, success_cb, failure_cb):
+        coro = self._do_send(url, data, headers, success_cb, failure_cb)
+
+        task = ensure_future(coro, loop=self._loop)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.remove)
+
+    @asyncio.coroutine
+    def _close(self, timeout=None):
+        yield from asyncio.gather(
+            *self._tasks,
+            return_exceptions=True,
+            loop=self._loop
+        )
+
+        assert len(self._tasks) == 0
+
+
+class QueuedAioHttpTransport(AioHttpTransportBase):
+
+    def __init__(self, *args, workers=1, qsize=1000, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._queue = asyncio.Queue(maxsize=qsize)
+
+        self._workers = set()
+
+        for _ in range(workers):
+            worker = ensure_future(self._worker(), loop=self._loop)
+            self._workers.add(worker)
+            worker.add_done_callback(self._workers.remove)
+
+    @asyncio.coroutine
+    def _worker(self):
+        while True:
+            try:
+                data = yield from self._queue.get()
+
+                if data is ...:
+                    self._queue.put_nowait(...)
+                    break
+
+                url, data, headers, success_cb, failure_cb = data
+
+                yield from self._do_send(url, data, headers, success_cb,
+                                         failure_cb)
+            finally:
+                self._queue.task_done()
+
+    def _async_send(self, url, data, headers, success_cb, failure_cb):
+        data = url, data, headers, success_cb, failure_cb
+
+        try:
+            self._queue.put_nowait(data)
+        except asyncio.QueueFull as exc:
+            while True:
+                skipped = self._queue.get_nowait()
+                self._queue.task_done()
+
+                if skipped is ...:
+                    self._queue.put_nowait(...)
+                    continue
+
+                break
+
+            *_, failure_cb = skipped
+
+            failure_cb(RuntimeError('AioHttpTransport background queue'
+                                    'is overloaded'))
+
+            self._queue.put_nowait(data)
+
+    @asyncio.coroutine
+    def _close(self):
+        yield from self._queue.put(...)
+
+        yield from asyncio.gather(
+            *self._workers,
+            return_exceptions=True,
+            loop=self._loop
+        )
+
+        assert len(self._workers) == 0
+        assert self._queue.qsize() == 1
+        try:
+            assert self._queue.get_nowait() is ...
+        finally:
+            self._queue.task_done()

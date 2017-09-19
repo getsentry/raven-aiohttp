@@ -7,6 +7,7 @@ import async_timeout
 import pytest
 from raven import Client
 
+from raven_aiohttp import AioHttpTransport, QueuedAioHttpTransport
 from tests.fake import FakeResolver, FakeServer
 
 
@@ -86,10 +87,12 @@ def fake_server(event_loop):
 def wait(event_loop):
     @asyncio.coroutine
     def do_wait(transport, timeout=1):
-        if transport._background_workers:
+        if isinstance(transport, QueuedAioHttpTransport):
             coro = transport._queue.join()
-        else:
+        elif isinstance(transport, AioHttpTransport):
             coro = asyncio.gather(*transport._tasks, loop=event_loop)
+        else:
+            raise NotImplementedError
 
         with async_timeout.timeout(timeout, loop=event_loop):
             yield from coro
