@@ -20,6 +20,7 @@ AioHttpTransport
 ----------------
 
 All messages to the sentry server will be produced by "Fire And Forget"
+
 Each new message spawns it owns `asyncio.Task`, amount of then is not limited
 
 .. code-block:: python
@@ -46,6 +47,7 @@ QueuedAioHttpTransport
 ----------------------
 
 All messages to the sentry server will be produced by queue system
+
 When transport is created it spawns limited amount of `asyncio.Task`
 which sends messages one by one from internal `asyncio.Queue`.
 
