@@ -121,7 +121,6 @@ class AioHttpTransportBase(
                 yield from session.close()
 
     @abc.abstractmethod
-    @asyncio.coroutine
     def _async_send(self, *, timeout=None):
         pass
 
