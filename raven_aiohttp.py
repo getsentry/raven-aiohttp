@@ -202,7 +202,8 @@ class AioHttpTransport(AsyncTransport, HTTPTransport):
 
                 *_, failure_cb = skipped
 
-                failure_cb(exc)
+                failure_cb(RuntimeError('AioHttpTransport background queue'
+                                        'is overloaded'))
 
                 self._queue.put_nowait(data)
         else:
