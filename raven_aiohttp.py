@@ -138,7 +138,7 @@ class AioHttpTransportBase(
         self._async_send(url, data, headers, success_cb, failure_cb)
 
     @asyncio.coroutine
-    def close(self, timeout=None):
+    def close(self, *, timeout=None):
         self._closing = True
 
         try:
