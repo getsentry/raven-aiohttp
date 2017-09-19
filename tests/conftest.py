@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import os
 from functools import partial
 
 import async_timeout
@@ -12,6 +13,8 @@ from tests.fake import FakeResolver, FakeServer
 @pytest.fixture
 def event_loop(request):
     loop = asyncio.new_event_loop()
+
+    loop.set_debug(bool(os.environ.get('PYTHONASYNCIODEBUG')))
 
     request.addfinalizer(lambda: asyncio.set_event_loop(None))
 
