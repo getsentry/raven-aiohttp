@@ -8,13 +8,12 @@ pytestmark = pytest.mark.asyncio
 
 
 @asyncio.coroutine
-def test_basic_fire_and_forget(fake_server, raven_client, wait, event_loop):
+def test_basic_fire_and_forget(fake_server, raven_client, wait):
     server = yield from fake_server()
 
     client, transport = raven_client(
         server,
         AioHttpTransport,
-        loop=event_loop,
     )
 
     try:
@@ -28,14 +27,13 @@ def test_basic_fire_and_forget(fake_server, raven_client, wait, event_loop):
 
 
 @asyncio.coroutine
-def test_basic_queue(fake_server, raven_client, wait, event_loop):
+def test_basic_queue(fake_server, raven_client, wait):
     server = yield from fake_server()
 
     client, transport = raven_client(
         server,
         AioHttpTransport,
         background_workers=1,
-        loop=event_loop,
     )
 
     try:
