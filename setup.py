@@ -36,12 +36,12 @@ tests_require = [
     'pytest',
     'pytest-asyncio<0.6.0',  # to support Python 3.5-
     'pytest-cov',
+    'pytest-mock'
 ]
 
 
 install_requires = [
-    'async_timeout',
-    'aiohttp>=2.2',
+    'aiohttp>=2.0',
     'raven>=5.4.0',
 ]
 

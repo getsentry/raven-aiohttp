@@ -10,7 +10,6 @@ import asyncio
 import socket
 
 import aiohttp
-import async_timeout
 from raven.conf import defaults
 from raven.exceptions import APIError, RateLimited
 from raven.transport.base import AsyncTransport
@@ -87,26 +86,30 @@ class AioHttpTransportBase(
             session = self._client_session_factory()
 
         resp = None
-        try:
-            with async_timeout.timeout(self.timeout, loop=self._loop):
-                # timeout=None disables built-in aiohttp timeout
-                resp = yield from session.post(url, data=data, compress=False,
-                                               headers=headers, timeout=None)
 
-                code = resp.status
-                if code != 200:
-                    msg = resp.headers.get('x-sentry-error')
-                    if code == 429:
-                        try:
-                            retry_after = resp.headers.get('retry-after')
-                            retry_after = int(retry_after)
-                        except (ValueError, TypeError):
-                            retry_after = 0
-                        failure_cb(RateLimited(msg, retry_after))
-                    else:
-                        failure_cb(APIError(msg, code))
+        try:
+            resp = yield from session.post(
+                url,
+                data=data,
+                compress=False,
+                headers=headers,
+                timeout=self.timeout
+            )
+
+            code = resp.status
+            if code != 200:
+                msg = resp.headers.get('x-sentry-error')
+                if code == 429:
+                    try:
+                        retry_after = resp.headers.get('retry-after')
+                        retry_after = int(retry_after)
+                    except (ValueError, TypeError):
+                        retry_after = 0
+                    failure_cb(RateLimited(msg, retry_after))
                 else:
-                    success_cb()
+                    failure_cb(APIError(msg, code))
+            else:
+                success_cb()
         except asyncio.CancelledError:
             # do not mute asyncio.CancelledError
             raise
@@ -119,12 +122,12 @@ class AioHttpTransportBase(
                 yield from session.close()
 
     @abc.abstractmethod
-    def _async_send(self, *, timeout=None):
+    def _async_send(self, *, timeout=None):  # pragma: no cover
         pass
 
     @abc.abstractmethod
     @asyncio.coroutine
-    def _close(self, *, timeout=None):
+    def _close(self, *, timeout=None):  # pragma: no cover
         pass
 
     def async_send(self, url, data, headers, success_cb, failure_cb):
@@ -136,18 +139,27 @@ class AioHttpTransportBase(
         self._async_send(url, data, headers, success_cb, failure_cb)
 
     @asyncio.coroutine
-    def close(self, *, timeout=None):
-        self._closing = True
-
+    def _close_coro(self, *, timeout=None):
         try:
-            with async_timeout.timeout(timeout, loop=self._loop):
-                yield from self._close()
-            import ipdb; ipdb.set_trace()
+            yield from asyncio.wait_for(
+                self._close(), timeout=timeout, loop=self._loop)
         except asyncio.TimeoutError:
             pass
         finally:
             if self.keepalive:
                 yield from self._client_session.close()
+
+    def close(self, *, timeout=None):
+        if self._closing:
+            @asyncio.coroutine
+            def dummy():
+                pass
+
+            return dummy()
+
+        self._closing = True
+
+        return self._close_coro(timeout=timeout)
 
     if not has_newstyle_transports:
         oldstyle_async_send = async_send
@@ -186,7 +198,7 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
     def __init__(self, *args, workers=1, qsize=1000, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._queue = asyncio.Queue(maxsize=qsize)
+        self._queue = asyncio.Queue(maxsize=qsize, loop=self._loop)
 
         self._workers = set()
 
@@ -218,15 +230,8 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
         try:
             self._queue.put_nowait(data)
         except asyncio.QueueFull as exc:
-            while True:
-                skipped = self._queue.get_nowait()
-                self._queue.task_done()
-
-                if skipped is ...:
-                    self._queue.put_nowait(...)
-                    continue
-
-                break
+            skipped = self._queue.get_nowait()
+            self._queue.task_done()
 
             *_, failure_cb = skipped
 
@@ -237,7 +242,18 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
 
     @asyncio.coroutine
     def _close(self):
-        yield from self._queue.put(...)
+        try:
+            self._queue.put_nowait(...)
+        except asyncio.QueueFull as exc:
+            skipped = self._queue.get_nowait()
+            self._queue.task_done()
+
+            *_, failure_cb = skipped
+
+            failure_cb(RuntimeError(
+                'QueuedAioHttpTransport internal queue was full'))
+
+            self._queue.put_nowait(...)
 
         yield from asyncio.gather(
             *self._workers,

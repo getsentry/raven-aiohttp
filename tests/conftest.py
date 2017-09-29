@@ -11,8 +11,13 @@ from raven_aiohttp import AioHttpTransport, QueuedAioHttpTransport
 from tests.fake import FakeResolver, FakeServer
 
 
+asyncio.set_event_loop(None)
+
+
 @pytest.fixture
 def event_loop(request):
+    asyncio.set_event_loop(None)
+
     loop = asyncio.new_event_loop()
 
     loop.set_debug(bool(os.environ.get('PYTHONASYNCIODEBUG')))
@@ -35,7 +40,7 @@ def raven_client(event_loop):
     def do_client(fake_server, cls, *args, **kwargs):
         kwargs.setdefault('loop', event_loop)
 
-        dsn = 'http://foo:bar@127.0.01:{port}/1'.format(
+        dsn = 'http://foo:bar@127.0.0.1:{port}/1'.format(
             port=fake_server.port,
         )
 

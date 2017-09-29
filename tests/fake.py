@@ -39,24 +39,35 @@ class FakeServer:
 
     host = '127.0.0.1'
 
-    def __init__(self, *, side_effect=200, loop):
+    def __init__(self, *, side_effect=None, loop):
         self.loop = loop
+
+        if side_effect is None:
+            side_effect = {
+                'status': 200,
+            }
+
+        self._side_effect = side_effect
+        self._slop_factor = 0
 
         self.app = web.Application(loop=loop)
         self.setup_routes()
 
         self.port = unused_port()
-        self._side_effect = side_effect
 
         self.hits = defaultdict(lambda: 0)
 
-    def _get_side_effect(self):
+    @property
+    def side_effect(self):
         return self._side_effect
 
-    def _set_side_effect(self, value):
-        self._side_effect = value
+    def _get_slop_factor(self):
+        return self._slop_factor
 
-    side_effect = property(_get_side_effect, _set_side_effect)
+    def _set_slop_factor(self, value):
+        self._slop_factor = value
+
+    slop_factor = property(_get_slop_factor, _set_slop_factor)
 
     @asyncio.coroutine
     def start(self):
@@ -72,8 +83,10 @@ class FakeServer:
 
     @asyncio.coroutine
     def store(self, request):
-        self.hits[self.side_effect] += 1
-        return web.Response(status=self.side_effect)
+        yield from asyncio.sleep(self.slop_factor, loop=self.loop)
+
+        self.hits[self.side_effect['status']] += 1
+        return web.Response(**self.side_effect)
 
     @asyncio.coroutine
     def close(self):
