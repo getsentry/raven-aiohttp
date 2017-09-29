@@ -72,11 +72,9 @@ class AioHttpTransportBase(
         return self._family
 
     def _client_session_factory(self):
-        # by default aiohttp.TCPConnector deadly caches dns
         connector = aiohttp.TCPConnector(verify_ssl=self.verify_ssl,
                                          resolve=self.resolve,
                                          family=self.family,
-                                         use_dns_cache=False,
                                          loop=self._loop)
         return aiohttp.ClientSession(connector=connector,
                                      loop=self._loop)
@@ -144,6 +142,7 @@ class AioHttpTransportBase(
         try:
             with async_timeout.timeout(timeout, loop=self._loop):
                 yield from self._close()
+            import ipdb; ipdb.set_trace()
         except asyncio.TimeoutError:
             pass
         finally:
@@ -199,9 +198,9 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
     @asyncio.coroutine
     def _worker(self):
         while True:
-            try:
-                data = yield from self._queue.get()
+            data = yield from self._queue.get()
 
+            try:
                 if data is ...:
                     self._queue.put_nowait(...)
                     break
