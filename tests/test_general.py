@@ -4,7 +4,6 @@ import pytest
 
 from raven_aiohttp import AioHttpTransport, QueuedAioHttpTransport
 
-
 transports = [QueuedAioHttpTransport, AioHttpTransport]
 
 

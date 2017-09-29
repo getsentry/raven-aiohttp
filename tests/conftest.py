@@ -10,7 +10,6 @@ from raven import Client
 from raven_aiohttp import AioHttpTransport, QueuedAioHttpTransport
 from tests.fake import FakeResolver, FakeServer
 
-
 asyncio.set_event_loop(None)
 
 
