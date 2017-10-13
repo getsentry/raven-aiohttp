@@ -8,7 +8,7 @@ Requirements
 ============
 
 - `raven-python>=5.4.0`
-- `python>=3.3`
+- `python>=3.4.2`
 - `aiohttp>=2.0`
 
 Usage
