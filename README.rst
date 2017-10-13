@@ -21,7 +21,7 @@ AioHttpTransport
 
 All messages to the sentry server will be produced by "Fire And Forget"
 
-Each new message spawns it owns `asyncio.Task`, amount of then is not limited
+Each new message spawns it owns `asyncio.Task`, amount of them is not limited
 
 .. code-block:: python
 
