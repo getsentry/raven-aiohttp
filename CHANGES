@@ -1,3 +1,13 @@
+0.6.0
+-----
+
+Requires aiohttp >= 2.2
+
+- Added AioHttpQueuedTransport
+- Added explicit close methods for all transports
+- disabled built-in aiohttp dns cache
+
+
 0.2.0
 -----
 

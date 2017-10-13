@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 raven-aiohttp
 =============
@@ -9,50 +8,79 @@ which supports Python 3's asyncio interface.
 :copyright: (c) 2015 Functional Software, Inc
 :license: BSD, see LICENSE for more details.
 """
-from __future__ import absolute_import, unicode_literals
-
-import os.path
+import io
+import os
+import re
+import sys
 
 from setuptools import setup
+from setuptools.command.test import test as TestCommand
 
 
-# Hack to prevent stupid "TypeError: 'NoneType' object is not callable" error
-# in multiprocessing/util.py _exit_function when running `python
-# setup.py test` (see
-# http://www.eby-sarna.com/pipermail/peak/2010-May/003357.html)
-for m in ('multiprocessing', 'billiard'):
-    try:
-        __import__(m)
-    except ImportError:
-        pass
+def get_version():
+    regex = r"__version__\s=\s\'(?P<version>.+?)\'"
 
-ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__)))
+    return re.search(regex, read('raven_aiohttp.py')).group('version')
+
+
+def read(*parts):
+    filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), *parts)
+
+    with io.open(filename, encoding='utf-8', mode='rt') as fp:
+        return fp.read()
+
 
 tests_require = [
-    'flake8>=2.1.0,<2.2.0',
-    'pytest>=3.0.0,<4.0.0',
-    'pytest-cov>=1.6,<1.7',
+    'flake8',
+    'isort',
+    'pytest',
+    'pytest-asyncio<0.6.0',  # to support Python 3.5-
+    'pytest-cov',
+    'pytest-mock'
 ]
 
 
 install_requires = [
-    'aiohttp>=0.19',
+    'aiohttp>=2.0',
     'raven>=5.4.0',
 ]
 
+
+class PyTest(TestCommand):
+    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = []
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        # import here, cause outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main(self.pytest_args)
+        sys.exit(errno)
+
+
 setup(
     name='raven-aiohttp',
-    version='0.6.0.dev0',
+    version=get_version(),
     author='David Cramer',
     author_email='dcramer@gmail.com',
     url='https://github.com/getsentry/raven-aiohttp',
     description='An asyncio transport for raven-python',
-    long_description=open('README.md').read(),
+    long_description=read('README.rst'),
     py_modules=['raven_aiohttp'],
     zip_safe=False,
     install_requires=install_requires,
     extras_require={
         'test': tests_require,
+    },
+    cmdclass={
+        'test': PyTest,
     },
     license='BSD',
     classifiers=[
@@ -63,7 +91,9 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3 :: Only',
-        'Topic :: Software Development'
+        'Topic :: Software Development',
     ],
 )
