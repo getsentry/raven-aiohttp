@@ -183,7 +183,7 @@ class AioHttpTransport(AioHttpTransportBase):
         task.add_done_callback(self._tasks.remove)
 
     @asyncio.coroutine
-    def _close(self, timeout=None):
+    def _close(self):
         yield from asyncio.gather(
             *self._tasks,
             return_exceptions=True,
