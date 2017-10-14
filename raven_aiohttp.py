@@ -122,12 +122,12 @@ class AioHttpTransportBase(
                 yield from session.close()
 
     @abc.abstractmethod
-    def _async_send(self, *, timeout=None):  # pragma: no cover
+    def _async_send(self, url, data, headers, success_cb, failure_cb):  # pragma: no cover
         pass
 
     @abc.abstractmethod
     @asyncio.coroutine
-    def _close(self, *, timeout=None):  # pragma: no cover
+    def _close(self):  # pragma: no cover
         pass
 
     def async_send(self, url, data, headers, success_cb, failure_cb):
