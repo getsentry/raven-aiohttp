@@ -1,8 +1,40 @@
-=============
-raven-aiohttp
-=============
+.. raw:: html
 
-A transport for `raven-python <https://github.com/getsentry/raven-python>`_ which supports Python 3's asyncio interface.
+    <p align="center">
+
+.. image:: https://sentry-brand.storage.googleapis.com/sentry-logo-black.png
+    :target: https://sentry.io
+    :align: center
+    :width: 116
+    :alt: Sentry website
+
+.. raw:: html
+
+    </p>
+
+===========================================================
+Raven-Aiohttp - Asyncio Transport for the Sentry Python SDK
+===========================================================
+
+.. image:: https://img.shields.io/pypi/v/raven-aiohttp.svg
+    :target: https://pypi.python.org/pypi/raven-aiohttp
+    :alt: PyPi page link -- version
+
+.. image:: https://travis-ci.org/getsentry/raven-aiohttp.svg?branch=master
+    :target: https://travis-ci.org/getsentry/raven-aiohttp
+
+.. image:: https://img.shields.io/pypi/l/raven-aiohttp.svg
+    :target: https://pypi.python.org/pypi/raven-aiohttp
+    :alt: PyPi page link -- BSD licence
+
+.. image:: https://img.shields.io/pypi/pyversions/raven-aiohttp.svg
+    :target: https://pypi.python.org/pypi/raven-aiohttp
+    :alt: PyPi page link -- Python versions
+
+
+A transport for the `Sentry Python SDK`_ which supports Python 3's asyncio interface.
+For more information about Sentry and the python SDK, see our `Python Documentation`_ for framework integrations
+and other goodies.
 
 Requirements
 ============
@@ -14,7 +46,7 @@ Requirements
 Usage
 =====
 
-`raven-aiohttp` ships 2 asyncio based transports for `raven.Client`
+`raven-aiohttp` ships two asyncio based transports for `raven.Client`: `AioHttpTransport` and `QueuedAioHttpTransport`.
 
 AioHttpTransport
 ----------------
@@ -70,3 +102,21 @@ which sends messages one by one from internal `asyncio.Queue`
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(client.remote.get_transport().close())
+
+
+
+Resources
+=========
+
+* `Sentry`_
+* `Python Documentation`_
+* `Issue Tracker`_
+* `IRC Channel`_ (irc.freenode.net, #sentry)
+
+.. _Sentry: https://getsentry.com/
+.. _Sentry Python SDK: https://github.com/getsentry/raven-python
+.. _Python Documentation: https://docs.getsentry.com/hosted/clients/python/
+.. _Issue Tracker: https://github.com/getsentry/raven-aiohttp/issues
+.. _IRC Channel: irc://irc.freenode.net/sentry
+
+

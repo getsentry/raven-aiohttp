@@ -25,7 +25,7 @@ try:
 except ImportError:
     has_newstyle_transports = False
 
-__version__ = '0.6.0.dev0'
+__version__ = '0.6.0'
 
 
 class AioHttpTransportBase(

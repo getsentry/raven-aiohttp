@@ -14,6 +14,10 @@ install:
 script:
   - time make lint-python
   - time make test-python
+branches:
+  only:
+    - master
+    - /^(?i:feature)-.*$/
 deploy:
   provider: pypi
   user: getsentry
