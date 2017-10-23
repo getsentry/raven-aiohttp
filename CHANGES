@@ -1,3 +1,8 @@
+X.X.X
+-----
+
+- Allow to pass an instance of ClientSession as an argument
+
 0.6.0
 -----
 
