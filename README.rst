@@ -86,7 +86,7 @@ which sends messages one by one from internal `asyncio.Queue`
 .. code-block:: python
 
     import asyncio
-    from functols import partial
+    from functools import partial
 
     from raven import Client
     from raven_aiohttp import QueuedAioHttpTransport
