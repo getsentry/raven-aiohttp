@@ -36,7 +36,7 @@ class AioHttpTransportBase(
 
     def __init__(self, parsed_url=None, *, verify_ssl=True, resolve=True,
                  timeout=defaults.TIMEOUT,
-                 keepalive=True, family=socket.AF_INET, loop=None):
+                 keepalive=True, family=socket.AF_INET, client_session=None, loop=None):
         self._resolve = resolve
         self._keepalive = keepalive
         self._family = family
@@ -53,7 +53,9 @@ class AioHttpTransportBase(
         else:
             super().__init__(parsed_url, timeout, verify_ssl)
 
-        if self.keepalive:
+        if client_session:
+            self._client_session = client_session
+        else:
             self._client_session = self._client_session_factory()
 
         self._closing = False
@@ -80,15 +82,10 @@ class AioHttpTransportBase(
 
     @asyncio.coroutine
     def _do_send(self, url, data, headers, success_cb, failure_cb):
-        if self.keepalive:
-            session = self._client_session
-        else:
-            session = self._client_session_factory()
-
         resp = None
 
         try:
-            resp = yield from session.post(
+            resp = yield from self._client_session.post(
                 url,
                 data=data,
                 compress=False,
@@ -118,8 +115,6 @@ class AioHttpTransportBase(
         finally:
             if resp is not None:
                 resp.release()
-            if not self.keepalive:
-                yield from session.close()
 
     @abc.abstractmethod
     def _async_send(self, url, data, headers, success_cb, failure_cb):  # pragma: no cover
@@ -146,8 +141,9 @@ class AioHttpTransportBase(
         except asyncio.TimeoutError:
             pass
         finally:
-            if self.keepalive:
+            if self._client_session:
                 yield from self._client_session.close()
+                self._client_session = None
 
     def close(self, *, timeout=None):
         if self._closing:

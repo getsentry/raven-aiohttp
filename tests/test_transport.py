@@ -1,7 +1,9 @@
 import asyncio
 import logging
+from functools import partial
 from unittest import mock
 
+import aiohttp
 import pytest
 
 from raven_aiohttp import AioHttpTransport
@@ -27,34 +29,20 @@ def test_basic(fake_server, raven_client, wait):
 
 
 @asyncio.coroutine
-def test_no_keepalive(fake_server, raven_client, wait):
-    transport = AioHttpTransport(keepalive=False)
-    assert not hasattr(transport, '_client_session')
-    yield from transport.close()
-
+def test_custom_client_session(fake_server, raven_client, wait):
     server = yield from fake_server()
 
-    client, transport = raven_client(server, AioHttpTransport)
-    transport._keepalive = False
-    session = transport._client_session
+    session = aiohttp.ClientSession()
+    client, transport = raven_client(server, partial(AioHttpTransport, client_session=session))
 
-    def _client_session_factory():
-        return session
+    try:
+        1 / 0
+    except ZeroDivisionError:
+        client.captureException()
 
-    with mock.patch(
-        'raven_aiohttp.AioHttpTransport._client_session_factory',
-        side_effect=_client_session_factory,
-    ):
-        try:
-            1 / 0
-        except ZeroDivisionError:
-            client.captureException()
+    yield from wait(transport)
 
-        yield from wait(transport)
-
-        assert session.closed
-
-        assert server.hits[200] == 1
+    assert server.hits[200] == 1
 
 
 @asyncio.coroutine
