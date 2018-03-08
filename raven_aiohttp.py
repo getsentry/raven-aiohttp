@@ -34,10 +34,9 @@ class AioHttpTransportBase(
     metaclass=abc.ABCMeta
 ):
 
-    def __init__(self, parsed_url=None, *, verify_ssl=True, resolve=True,
+    def __init__(self, parsed_url=None, *, verify_ssl=True,
                  timeout=defaults.TIMEOUT,
                  keepalive=True, family=socket.AF_INET, loop=None):
-        self._resolve = resolve
         self._keepalive = keepalive
         self._family = family
         if loop is None:
@@ -59,10 +58,6 @@ class AioHttpTransportBase(
         self._closing = False
 
     @property
-    def resolve(self):
-        return self._resolve
-
-    @property
     def keepalive(self):
         return self._keepalive
 
@@ -72,7 +67,6 @@ class AioHttpTransportBase(
 
     def _client_session_factory(self):
         connector = aiohttp.TCPConnector(verify_ssl=self.verify_ssl,
-                                         resolve=self.resolve,
                                          family=self.family,
                                          loop=self._loop)
         return aiohttp.ClientSession(connector=connector,
