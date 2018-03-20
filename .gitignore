@@ -11,6 +11,8 @@ npm-debug.log
 /htmlcov
 /node_modules
 /dist
+/venv
+/build
 .vagrant
 .cache
 .tox
