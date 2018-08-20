@@ -36,7 +36,7 @@ class AioHttpTransportBase(
 
     def __init__(self, parsed_url=None, *, verify_ssl=True,
                  timeout=defaults.TIMEOUT,
-                 keepalive=True, family=socket.AF_INET, loop=None):
+                 keepalive=True, family=socket.AP_UNSPEC, loop=None):
         self._keepalive = keepalive
         self._family = family
         if loop is None:
