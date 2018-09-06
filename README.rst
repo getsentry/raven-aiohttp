@@ -46,7 +46,7 @@ Requirements
 Installation
 ============
 
-.. 
+.. code-block:: shell
 
     pip3 install raven-aiohttp
 
