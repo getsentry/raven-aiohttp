@@ -43,6 +43,13 @@ Requirements
 - `python>=3.4.2`
 - `aiohttp>=2.0`
 
+Installation
+============
+
+.. 
+
+    pip3 install raven-aiohttp
+
 Usage
 =====
 
