@@ -39,7 +39,7 @@ and other goodies.
 Requirements
 ============
 
-- `raven-python>=5.4.0`
+- `raven>=5.4.0`
 - `python>=3.4.2`
 - `aiohttp>=2.0`
 
