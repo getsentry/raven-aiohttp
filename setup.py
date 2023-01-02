@@ -34,7 +34,7 @@ tests_require = [
     'flake8',
     'isort',
     'pytest',
-    'pytest-asyncio<0.6.0',  # to support Python 3.5-
+    'pytest-asyncio>=0.6.0',
     'pytest-cov',
     'pytest-mock'
 ]

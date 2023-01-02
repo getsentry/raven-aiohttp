@@ -1,7 +1,6 @@
 develop:
 	@echo "--> Installing dependencies"
-	pip install -e .
-	pip install "file://`pwd`#egg=raven-aiohttp[test]"
+	pip install -e .[test]
 
 test: develop lint-python test-python
 

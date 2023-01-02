@@ -17,8 +17,7 @@ class FakeResolver:
     def __init__(self, port):
         self.port = port
 
-    @asyncio.coroutine
-    def resolve(self, host, port=0, family=socket.AF_INET):
+    async def resolve(self, host, port=0, family=socket.AF_INET):
         return [
             {
                 'hostname': host,
@@ -69,10 +68,9 @@ class FakeServer:
 
     slop_factor = property(_get_slop_factor, _set_slop_factor)
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         self.handler = self.app.make_handler(loop=self.loop)
-        self.server = yield from self.loop.create_server(
+        self.server = await self.loop.create_server(
             self.handler,
             self.host,
             self.port,
@@ -81,24 +79,22 @@ class FakeServer:
     def setup_routes(self):
         self.app.router.add_post('/api/1/store/', self.store)
 
-    @asyncio.coroutine
-    def store(self, request):
-        yield from asyncio.sleep(self.slop_factor, loop=self.loop)
+    async def store(self, request):
+        await asyncio.sleep(self.slop_factor)
 
         self.hits[self.side_effect['status']] += 1
         return web.Response(**self.side_effect)
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         if self.server is not None:
             self.server.close()
-            yield from self.server.wait_closed()
+            await self.server.wait_closed()
 
         if self.app is not None:
-            yield from self.app.shutdown()
+            await self.app.shutdown()
 
         if self.handler is not None:
-            yield from self.handler.shutdown()
+            await self.handler.shutdown()
 
         if self.app is not None:
-            yield from self.app.cleanup()
+            await self.app.cleanup()
