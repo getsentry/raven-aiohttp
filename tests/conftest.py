@@ -55,10 +55,9 @@ def raven_client(event_loop):
 
     yield do_client
 
-    @asyncio.coroutine
-    def do_close():
+    async def do_close():
         closes = [transport.close() for transport in transports]
-        yield from asyncio.gather(*closes, loop=event_loop)
+        await asyncio.gather(*closes)
 
     event_loop.run_until_complete(do_close())
 
@@ -67,38 +66,35 @@ def raven_client(event_loop):
 def fake_server(event_loop):
     servers = []
 
-    @asyncio.coroutine
-    def do_server(*args, **kwargs):
+    async def do_server(*args, **kwargs):
         kwargs.setdefault('loop', event_loop)
         server = FakeServer(*args, **kwargs)
         servers.append(server)
 
-        yield from server.start()
+        await server.start()
 
         return server
 
     yield do_server
 
-    @asyncio.coroutine
-    def do_close():
+    async def do_close():
         closes = [server.close() for server in servers]
-        yield from asyncio.gather(*closes, loop=event_loop)
+        await asyncio.gather(*closes)
 
     event_loop.run_until_complete(do_close())
 
 
 @pytest.fixture
 def wait(event_loop):
-    @asyncio.coroutine
-    def do_wait(transport, timeout=1):
+    async def do_wait(transport, timeout=1):
         if isinstance(transport, QueuedAioHttpTransport):
             coro = transport._queue.join()
         elif isinstance(transport, AioHttpTransport):
-            coro = asyncio.gather(*transport._tasks, loop=event_loop)
+            coro = asyncio.gather(*transport._tasks)
         else:
             raise NotImplementedError
 
-        with async_timeout.timeout(timeout, loop=event_loop):
-            yield from coro
+        with async_timeout.timeout(timeout):
+            await coro
 
     return do_wait

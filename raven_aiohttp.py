@@ -72,8 +72,7 @@ class AioHttpTransportBase(
         return aiohttp.ClientSession(connector=connector,
                                      loop=self._loop)
 
-    @asyncio.coroutine
-    def _do_send(self, url, data, headers, success_cb, failure_cb):
+    async def _do_send(self, url, data, headers, success_cb, failure_cb):
         if self.keepalive:
             session = self._client_session
         else:
@@ -82,7 +81,7 @@ class AioHttpTransportBase(
         resp = None
 
         try:
-            resp = yield from session.post(
+            resp = await session.post(
                 url,
                 data=data,
                 compress=False,
@@ -113,15 +112,14 @@ class AioHttpTransportBase(
             if resp is not None:
                 resp.release()
             if not self.keepalive:
-                yield from session.close()
+                await session.close()
 
     @abc.abstractmethod
     def _async_send(self, url, data, headers, success_cb, failure_cb):  # pragma: no cover
         pass
 
     @abc.abstractmethod
-    @asyncio.coroutine
-    def _close(self):  # pragma: no cover
+    async def _close(self):  # pragma: no cover
         pass
 
     def async_send(self, url, data, headers, success_cb, failure_cb):
@@ -132,21 +130,18 @@ class AioHttpTransportBase(
 
         self._async_send(url, data, headers, success_cb, failure_cb)
 
-    @asyncio.coroutine
-    def _close_coro(self, *, timeout=None):
+    async def _close_coro(self, *, timeout=None):
         try:
-            yield from asyncio.wait_for(
-                self._close(), timeout=timeout, loop=self._loop)
+            await asyncio.wait_for(self._close(), timeout=timeout)
         except asyncio.TimeoutError:
             pass
         finally:
             if self.keepalive:
-                yield from self._client_session.close()
+                await self._client_session.close()
 
     def close(self, *, timeout=None):
         if self._closing:
-            @asyncio.coroutine
-            def dummy():
+            async def dummy():
                 pass
 
             return dummy()
@@ -176,12 +171,10 @@ class AioHttpTransport(AioHttpTransportBase):
         self._tasks.add(task)
         task.add_done_callback(self._tasks.remove)
 
-    @asyncio.coroutine
-    def _close(self):
-        yield from asyncio.gather(
+    async def _close(self):
+        await asyncio.gather(
             *self._tasks,
             return_exceptions=True,
-            loop=self._loop
         )
 
         assert len(self._tasks) == 0
@@ -192,7 +185,7 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
     def __init__(self, *args, workers=1, qsize=1000, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._queue = asyncio.Queue(maxsize=qsize, loop=self._loop)
+        self._queue = asyncio.Queue(maxsize=qsize)
 
         self._workers = set()
 
@@ -201,10 +194,9 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
             self._workers.add(worker)
             worker.add_done_callback(self._workers.remove)
 
-    @asyncio.coroutine
-    def _worker(self):
+    async def _worker(self):
         while True:
-            data = yield from self._queue.get()
+            data = await self._queue.get()
 
             try:
                 if data is ...:
@@ -213,8 +205,7 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
 
                 url, data, headers, success_cb, failure_cb = data
 
-                yield from self._do_send(url, data, headers, success_cb,
-                                         failure_cb)
+                await self._do_send(url, data, headers, success_cb, failure_cb)
             finally:
                 self._queue.task_done()
 
@@ -234,8 +225,7 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
 
             self._queue.put_nowait(data)
 
-    @asyncio.coroutine
-    def _close(self):
+    async def _close(self):
         try:
             self._queue.put_nowait(...)
         except asyncio.QueueFull as exc:
@@ -249,10 +239,9 @@ class QueuedAioHttpTransport(AioHttpTransportBase):
 
             self._queue.put_nowait(...)
 
-        yield from asyncio.gather(
+        await asyncio.gather(
             *self._workers,
             return_exceptions=True,
-            loop=self._loop
         )
 
         assert len(self._workers) == 0
