@@ -14,5 +14,5 @@ lint-python:
 	flake8 --show-source setup.py raven_aiohttp.py
 	isort --check-only setup.py raven_aiohttp.py --diff
 	flake8 --show-source tests
-	isort --check-only -rc tests --diff
+	isort --check-only tests --diff
 	@echo ""
